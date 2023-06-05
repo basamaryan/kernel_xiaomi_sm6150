@@ -2133,7 +2133,6 @@ static int fts_ts_probe_entry(struct fts_ts_data *ts_data)
         goto err_irq_req;
     }
 
-    ret = fts_fwupg_init(ts_data);
     if (ret) {
         FTS_ERROR("init fw upgrade fail");
     }
@@ -2238,8 +2237,6 @@ static int fts_ts_remove_entry(struct fts_ts_data *ts_data)
     fts_release_apk_debug_channel(ts_data);
     fts_remove_sysfs(ts_data);
     fts_ex_mode_exit(ts_data);
-
-    fts_fwupg_exit(ts_data);
 
 #if FTS_TEST_EN
     fts_test_exit(ts_data);
