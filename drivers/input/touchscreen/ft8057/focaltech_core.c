@@ -76,9 +76,6 @@ char fts_lockdown[17] = {0};
 /*C3T code for HQ-218218 by chenzimo at 2022/8/09 start*/
 #define PS_FAR_AWAY                  1
 #define PS_NEAR                      0
-extern int tp_select_proximity;
-extern void set_lcd_reset_gpio_keep_high(bool en);
-extern  int ps_send_touch_event(int32_t data);
 /*C3T code for HQ-219139 by chenzimo at 2022/8/17 start*/
 #if FTS_PSENSOR_ENABLE
 bool fts_proximity_suspend_flag = false;
@@ -176,11 +173,9 @@ static int fts_enter_proximity_mode(int mode)
     buf_addr = FTS_REG_FACE_DEC_MODE_EN;
     if (mode) {
         buf_value = 0x01;
-        set_lcd_reset_gpio_keep_high(true);
         tp_proximity_event = 1;
     } else {
         buf_value = 0x00;
-        set_lcd_reset_gpio_keep_high(false);
         tp_proximity_event = 0;
     }
 
@@ -243,13 +238,11 @@ int fts_proximity_readdata(struct fts_ts_data *ts_data)
         buf_value = 1;
         proximity_status = PS_NEAR;
         fts_write_reg(buf_addr, buf_value);
-        ps_send_touch_event(regvalue);
     } else if (regvalue == 0x00) {
         /* far away */
         buf_value = 0;
         proximity_status = PS_FAR_AWAY;
         fts_write_reg(buf_addr, buf_value);
-        ps_send_touch_event(0);
     }
 
     FTS_INFO("fts_proximity_data.detect is %d,proximity_status = %d,regvalue = %d", fts_proximity_data.detect,proximity_status,regvalue);
@@ -1149,7 +1142,6 @@ static int fts_irq_read_report(struct fts_ts_data *ts_data)
         break;
 
     case TOUCH_IGNORE:
-    case TOUCH_ERROR:
         break;
 
     default:
@@ -1997,7 +1989,6 @@ static int fts_ts_probe_entry(struct fts_ts_data *ts_data)
 
 #if defined(CONFIG_DRM)
 #if defined(CONFIG_DRM_PANEL)
-        ret = drm_check_dt(ts_data->dev->of_node);
         if (ret) {
             FTS_ERROR("parse drm-panel fail");
         }
@@ -2731,7 +2722,6 @@ static int fts_ts_probe(struct spi_device *spi)
         return ret;
     }
     /*C3T code for HQ-218218 by chenzimo at 2022/8/09 start*/
-    tp_select_proximity = 2;
     /*C3T code for HQ-218218 by chenzimo at 2022/8/09 end*/
     FTS_INFO("Touch Screen(SPI BUS) driver prboe successfully");
     return 0;

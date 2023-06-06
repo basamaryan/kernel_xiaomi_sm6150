@@ -34,7 +34,6 @@
 *****************************************************************************/
 #include "focaltech_core.h"
 #include "focaltech_flash.h"
-#include <linux/hqsysfs.h>
 
 /*****************************************************************************
 * Private constant and macro definitions using #define
@@ -1245,7 +1244,6 @@ static void fts_fwupg_work(struct work_struct *work)
 		ret = fts_read_reg(FTS_REG_FW_VER, &fw_version);
 		FTS_INFO("read FW version:0x%02x", fw_version);
 		sprintf(tp_version_info, "[Vendor]DJN [TP-IC]:FT8057, [FW]0x%x\n", fw_version);
-		hq_regiser_hw_info(HWID_CTP, tp_version_info);
     }
 }
 
