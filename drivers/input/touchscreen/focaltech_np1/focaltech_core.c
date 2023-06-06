@@ -82,89 +82,6 @@ static int drm_check_count = 0;
 #endif
 
 
-static struct drm_panel *active_panel;
-
-static int drm_check_dt(struct device_node *np)
-{
-    int i = 0;
-    int count = 0;
-    struct device_node *node = NULL;
-    struct drm_panel *panel = NULL;
-
-    count = of_count_phandle_with_args(np, "panel", NULL);
-    if (count <= 0) {
-        FTS_ERROR("find drm_panel count(%d) fail", count);
-        return -ENODEV;
-    }
-
-    for (i = 0; i < count; i++) {
-        node = of_parse_phandle(np, "panel", i);
-        panel = of_drm_find_panel(node);
-        of_node_put(node);
-        if (!IS_ERR(panel)) {
-            FTS_INFO("find drm_panel successfully");
-            active_panel = panel;
-            return 0;
-        }
-    }
-
-    FTS_ERROR("no find drm_panel");
-    return -ENODEV;
-}
-
-static int drm_notifier_callback(struct notifier_block *self,
-                                 unsigned long event, void *data)
-{
-    struct drm_panel_notifier *evdata = data;
-    int *blank = NULL;
-    struct fts_ts_data *ts_data = container_of(self, struct fts_ts_data,
-                                  fb_notif);
-    if (!evdata) {
-        FTS_ERROR("evdata is null");
-        return 0;
-    }
-
-    if (!((event == DRM_PANEL_EARLY_EVENT_BLANK )
-          || (event == DRM_PANEL_EVENT_BLANK))) {
-        FTS_INFO("event(%lu) do not need process\n", event);
-        return 0;
-    }
-
-    blank = evdata->data;
-    FTS_INFO("DRM event:%lu,blank:%d", event, *blank);
-    switch (*blank) {
-    case DRM_PANEL_BLANK_UNBLANK:
-        if (DRM_PANEL_EARLY_EVENT_BLANK == event) {
-            FTS_INFO("resume: event = %lu, not care\n", event);
-        } else if (DRM_PANEL_EVENT_BLANK == event) {
-            ts_data->blank_up = 1;
-            queue_work(fts_data->ts_workqueue, &fts_data->resume_work);
-        }
-        break;
-    case DRM_PANEL_BLANK_POWERDOWN:
-        if (DRM_PANEL_EARLY_EVENT_BLANK == event) {
-            cancel_work_sync(&fts_data->resume_work);
-            fts_ts_suspend(ts_data->dev);
-        } else if (DRM_PANEL_EVENT_BLANK == event) {
-            FTS_INFO("suspend: event = %lu, not care\n", event);
-        }
-        break;
-    case DRM_PANEL_BLANK_LP:
-        if (DRM_PANEL_EARLY_EVENT_BLANK == event) {
-            cancel_work_sync(&fts_data->resume_work);
-            fts_ts_suspend(ts_data->dev);
-        } else if (DRM_PANEL_EVENT_BLANK == event) {
-            FTS_INFO("suspend: event = %lu, not care\n", event);
-        }
-        break;
-    default:
-        FTS_INFO("DRM BLANK(%d) do not need process\n", *blank);
-        break;
-    }
-
-    return 0;
-}
-
 /*****************************************************************************
 * Static function prototypes
 *****************************************************************************/
@@ -1840,18 +1757,6 @@ static int fts_ts_probe_entry(struct fts_ts_data *ts_data)
         if (ret)
             FTS_ERROR("device-tree parse fail");
 
-#if defined(CONFIG_DRM)
-#if defined(CONFIG_DRM_PANEL)
-        ret = drm_check_dt(ts_data->dev->of_node);
-        if (ret) {
-            if (drm_check_count++ < DRM_CHK_MAX_COUNTS) {
-                FTS_INFO("parse drm-panel fail, count: %d", drm_check_count);
-                return -EPROBE_DEFER;
-            }
-            FTS_ERROR("parse drm-panel fail, do not retry again");
-        }
-#endif
-#endif
     } else {
         if (ts_data->dev->platform_data) {
             memcpy(ts_data->pdata, ts_data->dev->platform_data, pdata_size);
