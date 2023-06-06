@@ -570,8 +570,8 @@ And public attribution of xiaomi platforms(like F3 and so and)
 		focaltech,max-touch-number = <10>;
 		focaltech,display-coords = <0 0 1079 2399>;
 		pinctrl-names = "pmx_ts_active", "pmx_ts_suspend", "pmx_ts_release";
-		pinctrl-0 = <&ts_active>;
-		pinctrl-1 = <&ts_int_suspend &ts_reset_suspend>;
+                pinctrl-0 = <0x0>;
+                pinctrl-1 = <0x0 0x4>;
 		pinctrl-2 = <&ts_release>;
 		focaltech,touch-range-array = <1 5 10 15 20>;
 		focaltech,touch-def-array = <3 3 3 3>;
