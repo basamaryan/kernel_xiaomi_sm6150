@@ -2780,11 +2780,6 @@ static int __init fts_ts_init(void)
         }
 
         FTS_INFO("lcmname:%s\n", mtkfb_lcm_name);
-        /*C3T code for HQ-227901 by chenzimo at 2022/8/02 start*/
-	if ((strcmp(mtkfb_lcm_name, "dsi_panel_c3t_31_03_0b_dsc_vdo"))) {
-		return -1;
-	}
-	/*C3T code for HQ-227901 by chenzimo at 2022/8/02 end*/
     }
 
 /*C3T code for HQ-218218 by chenzimo at 2022/8/09 start*/
