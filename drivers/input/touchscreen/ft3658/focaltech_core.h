@@ -107,8 +107,6 @@
 #define FTS_LOCKDOWN_INFO_ADDR                      0x1F000
 #define FTS_LOCKDOWN_INFO_SIZE                      8
 
-#define FTS_XIAOMI_TOUCHFEATURE
-
 /*****************************************************************************
 *  Alternative mode (When something goes wrong, the modules may be able to solve the problem.)
 *****************************************************************************/
