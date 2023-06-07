@@ -83,6 +83,8 @@
 * Global variable or extern global variabls/functions
 *****************************************************************************/
 struct fts_ts_data *fts_data;
+#define HT_AFE_START                           0x50
+#define HT_AFE_STOP                            0x51
 
 /*****************************************************************************
 * Static function prototypes
@@ -681,9 +683,6 @@ static int fts_read_touchdata(struct fts_ts_data *data)
 		ret = fts_read(buf, 1, buf + 1, data->pnt_buf_size - 1);
 		fts_convert_rawdata(buf + FTS_TOUCH_DATA_LEN + FTS_GESTURE_DATA_LEN + 1,
 					FTS_DIFF_DATA_LEN - 1);
-		copy_touch_rawdata(buf + FTS_TOUCH_DATA_LEN + FTS_GESTURE_DATA_LEN + 1,
-					FTS_DIFF_DATA_LEN - 1);
-		update_clicktouch_raw();
 	} else {
 		ret = fts_read(buf, 1, buf + 1, data->pnt_buf_size - 1 - FTS_DIFF_DATA_LEN);
 	}
@@ -911,8 +910,6 @@ static irqreturn_t fts_irq_handler(int irq, void *data)
 		fts_data->tp_frame.tv = get_timeval(ktime_get());
 		fts_read_raw(fts_data, fts_data->tp_frame.tp_raw, read_size);
 		fts_data->tp_frame.tv0 = get_timeval(ktime_get());
-		copy_touch_rawdata((char *)(&fts_data->tp_frame), sizeof(struct tp_frame));
-		update_touch_rawdata();
 	} else {
 		fts_irq_read_report();
 	}
@@ -2198,8 +2195,6 @@ static void fts_init_touchmode_data(struct fts_ts_data *ts_data)
 
 	return;
 }
-#define HT_AFE_START                           0x50
-#define HT_AFE_STOP                            0x51
 
 static int fts_enable_touch_raw(bool en)
 {
@@ -2626,7 +2621,6 @@ static int fts_ts_suspend(struct device *dev)
 
 	fts_release_all_finger();
 	ts_data->suspended = true;
-	xiaomi_touch_set_suspend_state(1);
 	FTS_FUNC_EXIT();
 	return 0;
 }
@@ -2677,7 +2671,6 @@ static int fts_ts_resume(struct device *dev)
 		fts_write_reg(FTS_REG_DIFFDATA_EN, 0x00);
 	ts_data->poweroff_on_sleep = false;
 	ts_data->suspended = false;
-	xiaomi_touch_set_suspend_state(0);
 	FTS_FUNC_EXIT();
 	return 0;
 }
