@@ -70,6 +70,8 @@ int fts_read(u8 *cmd, u32 cmdlen, u8 *data, u32 datalen)
     struct i2c_msg *msg = NULL;
     int msg_num = 0;
 
+	pr_err("FTS: fts_read: cmd: 0x%02x", *cmd);
+
     /* must have data when read */
     if (!ts_data || !ts_data->client || !data || !datalen
         || (datalen > I2C_BUF_LENGTH) || (cmdlen > I2C_BUF_LENGTH)) {
