@@ -53,11 +53,7 @@
 *****************************************************************************/
 #define FTS_DRIVER_NAME "fts_ts"
 #define FTS_DRIVER_PEN_NAME "fts_ts,pen"
-#if defined ASUS_SAKE_PROJECT
 #define INTERVAL_READ_REG 50 /* unit:ms */
-#else
-#define INTERVAL_READ_REG 200 /* unit:ms */
-#endif
 #define TIMEOUT_READ_REG 1000 /* unit:ms */
 #if FTS_POWER_SOURCE_CUST_EN
 #define FTS_VTG_MIN_UV 2800000
@@ -145,10 +141,6 @@ void fts_tp_state_recovery(struct fts_ts_data *ts_data)
 	/* recover TP gesture state 0xD0 */
 	fts_gesture_recovery(ts_data);
 
-#if defined ASUS_SAKE_PROJECT
-	if (ts_data->high_report_rate)
-		fts_write_reg(FTS_REG_REPORT_RATE, FTS_REPORT_RATE_240);
-#endif
 
 	FTS_FUNC_EXIT();
 }
@@ -157,11 +149,7 @@ int fts_reset_proc(int hdelayms)
 {
 	FTS_DEBUG("tp reset");
 	gpio_direction_output(fts_data->pdata->reset_gpio, 0);
-#if defined ASUS_SAKE_PROJECT
 	msleep(5);
-#else
-	msleep(1);
-#endif
 	gpio_direction_output(fts_data->pdata->reset_gpio, 1);
 	if (hdelayms) {
 		msleep(hdelayms);
@@ -367,8 +355,9 @@ static int fts_get_ic_information(struct fts_ts_data *ts_data)
 	ts_data->ic_info.is_incell = FTS_CHIP_IDC;
 	ts_data->ic_info.hid_supported = FTS_HID_SUPPORTTED;
 
-#if defined ASUS_SAKE_PROJECT
 	FTS_FUNC_ENTER();
+
+#if 0
 	do {
 		ret = fts_read_reg(FTS_REG_CHIP_ID, &chip_id[0]);
 		ret = fts_read_reg(FTS_REG_CHIP_ID2, &chip_id[1]);
@@ -411,7 +400,7 @@ static int fts_get_ic_information(struct fts_ts_data *ts_data)
 #else
 	for (cnt = 0; cnt < 3; cnt++) {
 		fts_reset_proc(0);
-		mdelay(FTS_CMD_START_DELAY);
+		mdelay(FTS_CMD_START_DELAY + (cnt * 8));
 
 		ret = fts_read_bootid(ts_data, &chip_id[0]);
 		if (ret < 0) {
@@ -419,8 +408,7 @@ static int fts_get_ic_information(struct fts_ts_data *ts_data)
 			continue;
 		}
 
-		ret = fts_get_chip_types(ts_data, chip_id[0], chip_id[1],
-					 INVALID);
+		ret = fts_get_chip_types(ts_data, chip_id[0], chip_id[1], INVALID);
 		if (ret < 0) {
 			FTS_DEBUG("can't get ic informaton,retry:%d", cnt);
 			continue;
@@ -581,25 +569,6 @@ static int fts_input_report_b(struct fts_ts_data *data)
 				events[i].area = 0x09;
 			}
 
-#if defined ASUS_SAKE_PROJECT
-			if (data->fod_pressed &&
-			    data->events[i].area >= data->fod_last_press_area)
-				data->fod_pressed = false;
-
-			if (data->enabled_gestures[GESTURE_TYPE_FOD] &&
-			    !data->fod_pressed &&
-			    events[i].x >= data->fod_position[0] &&
-			    events[i].x <= data->fod_position[1] &&
-			    events[i].y >= data->fod_position[2] &&
-			    events[i].y <= data->fod_position[3]) {
-				data->fod_last_press_area = events[i].area;
-				data->fod_last_press_id = events[i].id;
-				data->fod_pressed = true;
-				data->fp_x = events[i].x;
-				data->fp_y = events[i].y;
-			}
-#endif
-
 			input_report_abs(data->input_dev, ABS_MT_TOUCH_MAJOR,
 					 events[i].area);
 			input_report_abs(data->input_dev, ABS_MT_POSITION_X,
@@ -619,11 +588,6 @@ static int fts_input_report_b(struct fts_ts_data *data)
 					  events[i].area);
 			}
 		} else {
-#if defined ASUS_SAKE_PROJECT
-			if (data->fod_pressed &&
-			    data->fod_last_press_id == events[i].id)
-				data->fod_pressed = false;
-#endif
 			input_mt_report_slot_state(data->input_dev,
 						   MT_TOOL_FINGER, false);
 			data->touchs &= ~BIT(events[i].id);
@@ -798,7 +762,7 @@ static int fts_read_touchdata(struct fts_ts_data *data)
 	int ret = 0;
 	u8 *buf = data->point_buf;
 
-#if defined ASUS_SAKE_PROJECT
+#if 0
 	if (data->suspended)
 		goto skip_touch_data_read;
 #endif
@@ -808,7 +772,6 @@ static int fts_read_touchdata(struct fts_ts_data *data)
 
 	ret = fts_read(buf, 1, buf + 1, data->pnt_buf_size - 1);
 
-#if !defined ASUS_SAKE_PROJECT
 	if (((0xEF == buf[2]) && (0xEF == buf[3]) && (0xEF == buf[4])) ||
 	    ((ret < 0) && (0xEF == buf[1]))) {
 		fts_release_all_finger();
@@ -820,18 +783,13 @@ static int fts_read_touchdata(struct fts_ts_data *data)
 		FTS_ERROR("touch data(%x) abnormal,ret:%d", buf[1], ret);
 		return -EIO;
 	}
-#endif
 
-#if defined ASUS_SAKE_PROJECT
+#if 0
 skip_touch_data_read:
 #endif
 
 	if (data->gesture_mode) {
-#if defined ASUS_SAKE_PROJECT
-		ret = fts_gesture_readdata(data, NULL);
-#else
 		ret = fts_gesture_readdata(data, buf + FTS_TOUCH_DATA_LEN);
-#endif
 		if (0 == ret) {
 			FTS_DEBUG("succuss to get gesture data in irq handler");
 			return 1;
@@ -899,18 +857,6 @@ static int fts_read_parse_touchdata(struct fts_ts_data *data)
 		}
 
 		data->touch_point++;
-#if defined ASUS_SAKE_PROJECT
-		events[i].x = ((buf[ASUS_TOUCH_X_1_POS + base] & 0x0F) << 12) +
-			      ((buf[ASUS_TOUCH_X_2_POS + base] & 0xFF) << 4) +
-			      (buf[ASUS_TOUCH_X_3_POS + base] >> 4);
-		events[i].y = ((buf[ASUS_TOUCH_Y_1_POS + base] & 0x0F) << 12) +
-			      ((buf[ASUS_TOUCH_Y_2_POS + base] & 0xFF) << 4) +
-			      (buf[ASUS_TOUCH_Y_3_POS + base] & 0x0F);
-		events[i].flag = buf[FTS_TOUCH_EVENT_POS + base] >> 6;
-		events[i].id = buf[FTS_TOUCH_ID_POS + base] >> 4;
-		events[i].area = buf[ASUS_TOUCH_Y_AREA_POS + base] >> 4;
-		events[i].p = buf[ASUS_TOUCH_Y_RATE_POS + base] & 0x0F;
-#else
 		events[i].x = ((buf[FTS_TOUCH_X_H_POS + base] & 0x0F) << 8) +
 			      (buf[FTS_TOUCH_X_L_POS + base] & 0xFF);
 		events[i].y = ((buf[FTS_TOUCH_Y_H_POS + base] & 0x0F) << 8) +
@@ -919,7 +865,6 @@ static int fts_read_parse_touchdata(struct fts_ts_data *data)
 		events[i].id = buf[FTS_TOUCH_ID_POS + base] >> 4;
 		events[i].area = buf[FTS_TOUCH_AREA_POS + base] >> 4;
 		events[i].p = buf[FTS_TOUCH_PRE_POS + base];
-#endif
 
 		if (EVENT_DOWN(events[i].flag) && (data->point_num == 0)) {
 			FTS_INFO("abnormal touch data from fw");
@@ -1109,13 +1054,8 @@ static int fts_report_buffer_init(struct fts_ts_data *ts_data)
 	int point_num = 0;
 	int events_num = 0;
 
-#if defined ASUS_SAKE_PROJECT
-	point_num = ts_data->pdata->max_touch_number;
-	ts_data->pnt_buf_size = point_num * FTS_ONE_TCH_LEN + 3;
-#else
 	point_num = FTS_MAX_POINTS_SUPPORT;
 	ts_data->pnt_buf_size = FTS_TOUCH_DATA_LEN + FTS_GESTURE_DATA_LEN;
-#endif
 
 	ts_data->point_buf =
 		(u8 *)kzalloc(ts_data->pnt_buf_size + 1, GFP_KERNEL);
@@ -1270,11 +1210,7 @@ static int fts_power_source_ctrl(struct fts_ts_data *ts_data, int enable)
 		if (!ts_data->power_disabled) {
 			FTS_DEBUG("regulator disable !");
 			gpio_direction_output(ts_data->pdata->reset_gpio, 0);
-#if defined ASUS_SAKE_PROJECT
 			msleep(10);
-#else
-			msleep(1);
-#endif
 			ret = regulator_disable(ts_data->vdd);
 			if (ret) {
 				FTS_ERROR("disable vdd regulator failed,ret=%d",
@@ -1730,12 +1666,6 @@ static int fts_ts_probe_entry(struct fts_ts_data *ts_data)
 	mutex_init(&ts_data->report_mutex);
 	mutex_init(&ts_data->bus_lock);
 
-#if defined ASUS_SAKE_PROJECT
-	ts_data->fod_position[0] = 6560;
-	ts_data->fod_position[1] = 10720;
-	ts_data->fod_position[2] = 26096;
-	ts_data->fod_position[3] = 30256;
-#endif
 
 	/* Init communication interface */
 	ret = fts_bus_init(ts_data);
@@ -2015,11 +1945,6 @@ int fts_ts_resume(struct device *dev)
 	} else {
 		fts_irq_enable();
 	}
-
-#if defined ASUS_SAKE_PROJECT
-	if (ts_data->high_report_rate)
-		fts_write_reg(FTS_REG_REPORT_RATE, FTS_REPORT_RATE_240);
-#endif
 
 	ts_data->suspended = false;
 	FTS_FUNC_EXIT();

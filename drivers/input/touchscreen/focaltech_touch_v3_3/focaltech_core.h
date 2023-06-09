@@ -91,19 +91,6 @@
 #define FTS_X_MAX_DISPLAY_DEFAULT 720
 #define FTS_Y_MAX_DISPLAY_DEFAULT 1280
 
-#if defined ASUS_SAKE_PROJECT
-#define ASUS_TOUCH_X_1_POS 3
-#define ASUS_TOUCH_X_2_POS 4
-#define ASUS_TOUCH_X_3_POS 7
-
-#define ASUS_TOUCH_Y_1_POS 5
-#define ASUS_TOUCH_Y_2_POS 6
-#define ASUS_TOUCH_Y_3_POS 7
-
-#define ASUS_TOUCH_Y_AREA_POS 8
-#define ASUS_TOUCH_Y_RATE_POS 8
-#endif
-
 #define FTS_TOUCH_DOWN 0
 #define FTS_TOUCH_UP 1
 #define FTS_TOUCH_CONTACT 2
@@ -120,24 +107,6 @@
 *****************************************************************************/
 #define FTS_HIGH_REPORT 0
 #define FTS_SIZE_DEFAULT 15
-
-#if defined ASUS_SAKE_PROJECT
-enum gesture_type {
-	GESTURE_TYPE_UP,
-	GESTURE_TYPE_DOUBLECLICK,
-	GESTURE_TYPE_PAUSE,
-	GESTURE_TYPE_FOD,
-	GESTURE_TYPE_W,
-	GESTURE_TYPE_M,
-	GESTURE_TYPE_E,
-	GESTURE_TYPE_S,
-	GESTURE_TYPE_REWIND,
-	GESTURE_TYPE_FORWARD,
-	GESTURE_TYPE_V,
-	GESTURE_TYPE_Z,
-	GESTURE_TYPE_MAX,
-};
-#endif
 
 /*****************************************************************************
 * Private enumerations, structures and unions using typedef
@@ -244,19 +213,6 @@ struct fts_ts_data {
 	struct notifier_block fb_notif;
 #elif defined(CONFIG_HAS_EARLYSUSPEND)
 	struct early_suspend early_suspend;
-#endif
-#if defined ASUS_SAKE_PROJECT
-	unsigned int fp_x;
-	unsigned int fp_y;
-	struct delayed_work gesture_work;
-	bool enabled_gestures[GESTURE_TYPE_MAX];
-	u8 gesture_data[5];
-	bool fod_pressed;
-	bool double_click_pressed;
-	unsigned int fod_last_press_area;
-	unsigned int fod_last_press_id;
-	unsigned int fod_position[4];
-	bool high_report_rate;
 #endif
 };
 

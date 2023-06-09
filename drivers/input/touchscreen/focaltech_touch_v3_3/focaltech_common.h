@@ -58,31 +58,12 @@
 
 #define FTS_MAX_CHIP_IDS 8
 
-#if defined ASUS_SAKE_PROJECT
 #define FTS_CHIP_TYPE_MAPPING                                                  \
 	{                                                                      \
 		{                                                              \
 			0x88, 0x56, 0x52, 0x00, 0x00, 0x00, 0x00, 0x56, 0xB2   \
 		}                                                              \
 	}
-#else
-#define FTS_CHIP_TYPE_MAPPING                                                  \
-	{                                                                      \
-		{                                                              \
-			0x1C, 0x87, 0x20, 0x87, 0x20, 0x87, 0xA0, 0x00, 0x00   \
-		}                                                              \
-	}
-
-#define FTS_CHIP_ID_MAPPING                                                    \
-	{                                                                      \
-		{                                                              \
-			0x1C,                                                  \
-			{                                                      \
-				0x8726, 0x872A, 0x872B                         \
-			}                                                      \
-		}                                                              \
-	}
-#endif
 
 #define FILE_NAME_LENGTH 128
 #define ENABLE 1
@@ -123,12 +104,6 @@
 #define FTS_REG_MODULE_ID 0xE3
 #define FTS_REG_LIC_VER 0xE4
 #define FTS_REG_ESD_SATURATE 0xED
-
-#if defined ASUS_SAKE_PROJECT
-#define FTS_REG_REPORT_RATE 0xC3
-#define FTS_REPORT_RATE_240 0
-#define FTS_REPORT_RATE_120 1
-#endif
 
 #define FTS_SYSFS_ECHO_ON(buf) (buf[0] == '1')
 #define FTS_SYSFS_ECHO_OFF(buf) (buf[0] == '0')

@@ -38,11 +38,7 @@
 /*****************************************************************************
 * Private constant and macro definitions using #define
 *****************************************************************************/
-#if defined ASUS_SAKE_PROJECT
-#define FTS_FW_REQUEST_SUPPORT 0
-#else
 #define FTS_FW_REQUEST_SUPPORT 1
-#endif
 /* Example: focaltech_ts_fw_tianma.bin */
 #define FTS_FW_NAME_PREX_WITH_REQUEST "focaltech_ts_fw_"
 
@@ -1985,12 +1981,8 @@ static int fts_fwupg_get_fw_file(struct fts_upgrade *upg)
 	upg->lic_length = upg->fw_length;
 
 	FTS_INFO("upgrade fw file len:%d", upg->fw_length);
-#if defined ASUS_SAKE_PROJECT
-	if ((upg->fw_length < FTS_MIN_LEN)) {
-#else
 	if ((upg->fw_length < FTS_MIN_LEN) ||
 	    (upg->fw_length > FTS_MAX_LEN_FILE)) {
-#endif
 		FTS_ERROR("fw file len(%d) fail", upg->fw_length);
 		return -ENODATA;
 	}
