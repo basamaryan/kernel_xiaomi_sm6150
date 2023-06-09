@@ -294,12 +294,6 @@ int fts_point_report_check_exit(struct fts_ts_data *ts_data);
 void fts_prc_queue_work(struct fts_ts_data *ts_data);
 #endif
 
-/* FW upgrade */
-int fts_fwupg_init(struct fts_ts_data *ts_data);
-int fts_fwupg_exit(struct fts_ts_data *ts_data);
-int fts_upgrade_bin(char *fw_name, bool force);
-int fts_enter_test_environment(bool test_state);
-
 /* Other */
 int fts_reset_proc(int hdelayms);
 int fts_wait_tp_to_valid(void);

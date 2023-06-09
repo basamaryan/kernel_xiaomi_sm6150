@@ -89,7 +89,6 @@ static int fts_ft5452_upgrade(u8 *buf, u32 len)
     }
 
     /* write app */
-    start_addr = upgrade_func_ft5452.appoff;
     ecc_in_host = fts_flash_write_buf(start_addr, buf, len, 1);
     if (ecc_in_host < 0 ) {
         FTS_ERROR("flash write fail");
@@ -169,13 +168,3 @@ fw_reset:
     }
     return -EIO;
 }
-
-struct upgrade_func upgrade_func_ft5452 = {
-    .ctype = {0x81},
-    .fwveroff = 0x010E,
-    .fwcfgoff = 0x1FFB0,
-    .appoff = 0x0000,
-    .pramboot_supported = false,
-    .hid_supported = true,
-    .upgrade = fts_ft5452_upgrade,
-};

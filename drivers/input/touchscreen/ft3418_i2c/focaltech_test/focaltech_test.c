@@ -2081,16 +2081,6 @@ static ssize_t fts_test_store(
     fts_esdcheck_switch(DISABLE);
 #endif
 
-    ret = fts_enter_test_environment(1);
-    if (ret < 0) {
-        FTS_ERROR("enter test environment fail");
-    } else {
-        fts_test_entry(fwname);
-    }
-    ret = fts_enter_test_environment(0);
-    if (ret < 0) {
-        FTS_ERROR("enter normal environment fail");
-    }
 
 #if defined(FTS_ESDCHECK_EN) && (FTS_ESDCHECK_EN)
     fts_esdcheck_switch(ENABLE);
@@ -2400,16 +2390,6 @@ int lct_tp_selftest_all(void)
 	fts_esdcheck_switch(DISABLE);
 #endif
 
-	ret = fts_enter_test_environment(1);
-	if (ret < 0) {
-		FTS_ERROR("enter test environment fail");
-	} else {
-		result = fts_test_entry(fwname);
-	}
-	ret = fts_enter_test_environment(0);
-	if (ret < 0) {
-		FTS_ERROR("enter normal environment fail");
-	}
 #if defined(FTS_ESDCHECK_EN) && (FTS_ESDCHECK_EN)
 	fts_esdcheck_switch(ENABLE);
 #endif

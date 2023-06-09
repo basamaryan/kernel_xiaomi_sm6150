@@ -1485,11 +1485,6 @@ static int fts_ts_probe_entry(struct fts_ts_data *ts_data)
         goto err_irq_req;
     }
 
-    ret = fts_fwupg_init(ts_data);
-    if (ret) {
-        FTS_ERROR("init fw upgrade fail");
-    }
-
     if (ts_data->ts_workqueue) {
         INIT_WORK(&ts_data->resume_work, fts_resume_work);
         INIT_WORK(&ts_data->suspend_work, fts_suspend_work);
@@ -1576,8 +1571,6 @@ static int fts_ts_remove_entry(struct fts_ts_data *ts_data)
 
     fts_remove_sysfs(ts_data);
     fts_ex_mode_exit(ts_data);
-
-    fts_fwupg_exit(ts_data);
 
 #if FTS_TEST_EN
     fts_test_exit(ts_data);
