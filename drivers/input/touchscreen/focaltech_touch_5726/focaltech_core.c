@@ -352,7 +352,9 @@ static int fts_get_ic_information(struct fts_ts_data *ts_data)
     ts_data->ic_info.is_incell = FTS_CHIP_IDC;
     ts_data->ic_info.hid_supported = FTS_HID_SUPPORTTED;
 
+	FTS_FUNC_ENTER();
 
+#if 0
     do {
         ret = fts_read_reg(FTS_REG_CHIP_ID, &chip_id[0]);
         ret = fts_read_reg(FTS_REG_CHIP_ID2, &chip_id[1]);
@@ -390,11 +392,38 @@ static int fts_get_ic_information(struct fts_ts_data *ts_data)
             return ret;
         }
     }
+#else
+    for (cnt = 0; cnt < 3; cnt++) {
+		fts_reset_proc(0);
+		mdelay(FTS_CMD_START_DELAY);
+
+	    ret = fts_read_bootid(ts_data, &chip_id[0]);
+	    if (ret < 0) {
+			FTS_DEBUG("read boot id fail,retry:%d", cnt);
+			continue;
+		}
+
+		ret = fts_get_chip_types(ts_data, chip_id[0], chip_id[1],
+					 INVALID);
+		if (ret < 0) {
+			FTS_DEBUG("can't get ic informaton,retry:%d", cnt);
+			continue;
+		}
+
+		break;
+	}
+
+
+	if (cnt >= 3) {
+		FTS_ERROR("get ic informaton fail");
+		return -EIO;
+	}
+#endif
 
     FTS_INFO("get ic information, chip id = 0x%02x%02x(cid type=0x%x)",
              ts_data->ic_info.ids.chip_idh, ts_data->ic_info.ids.chip_idl,
              ts_data->ic_info.cid.type);
-
+    FTS_FUNC_EXIT();
     return 0;
 }
 
