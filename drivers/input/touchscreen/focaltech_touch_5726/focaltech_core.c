@@ -76,7 +76,6 @@ struct fts_ts_data *fts_data;
 *****************************************************************************/
 static int fts_ts_suspend(struct device *dev);
 static int fts_ts_resume(struct device *dev);
-extern bool fb_power_off(void);
 
 int fts_check_cid(struct fts_ts_data *ts_data, u8 id_h)
 {
@@ -2099,7 +2098,6 @@ static int fts_ts_suspend(struct device *dev)
 
     fts_esdcheck_suspend(ts_data);
 
-	if(fb_power_off()){
     if (ts_data->gesture_support) {
         fts_gesture_suspend(ts_data);
     } else {
@@ -2120,11 +2118,8 @@ static int fts_ts_suspend(struct device *dev)
         }
     }
 
-    //fts_release_all_finger();
+    fts_release_all_finger();
     ts_data->suspended = true;
-	}else{
-		//enable_irq_wake(fts_data->irq);
-	}
     FTS_FUNC_EXIT();
     return 0;
 }
@@ -2138,8 +2133,6 @@ static int fts_ts_resume(struct device *dev)
         FTS_DEBUG("Already in awake state");
         return 0;
     }
-	FTS_INFO("fts_ts_resume fb_power_off():%d\n",fb_power_off());
-	if(fb_power_off()){
 
     fts_release_all_finger();
 
@@ -2161,10 +2154,7 @@ static int fts_ts_resume(struct device *dev)
     else {
         fts_irq_enable();
     }
-	}else{
-		//disable_irq_wake(ts_data->irq);
-	}
-        ts_data->suspended = false;
+    ts_data->suspended = false;
     FTS_FUNC_EXIT();
     return 0;
 }
