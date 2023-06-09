@@ -74,6 +74,9 @@ struct fts_ts_data *fts_data;
 /*****************************************************************************
 * Static function prototypes
 *****************************************************************************/
+static int fts_ts_suspend(struct device *dev);
+static int fts_ts_resume(struct device *dev);
+extern bool fb_power_off(void);
 
 int fts_check_cid(struct fts_ts_data *ts_data, u8 id_h)
 {
@@ -1590,6 +1593,14 @@ static int fts_parse_dt(struct device *dev, struct fts_ts_platform_data *pdata)
     return 0;
 }
 
+static void fts_resume_work(struct work_struct *work)
+{
+    struct fts_ts_data *ts_data = container_of(work, struct fts_ts_data,
+                                  resume_work);
+
+    fts_ts_resume(ts_data->dev);
+}
+
 #if defined(CONFIG_FB)
 static int fb_notifier_callback(struct notifier_block *self,
                                 unsigned long event, void *data)
@@ -1617,6 +1628,10 @@ static int fb_notifier_callback(struct notifier_block *self,
             FTS_INFO("resume: event = %lu, not care\n", event);
         } else if (FB_EVENT_BLANK == event) {
             queue_work(fts_data->ts_workqueue, &fts_data->resume_work);
+        } else if (FB_EVENT_SUSPEND == event) {
+            fts_ts_suspend(ts_data->dev);
+        } else if (FB_EVENT_RESUME == event) {
+            fts_ts_resume(ts_data->dev);
         }
 
         break;
@@ -1700,6 +1715,7 @@ static int drm_notifier_callback(struct notifier_block *self,
     case DRM_PANEL_BLANK_POWERDOWN:
         if (DRM_PANEL_EARLY_EVENT_BLANK == event) {
             cancel_work_sync(&fts_data->resume_work);
+            fts_ts_suspend(ts_data->dev);
         } else if (DRM_PANEL_EVENT_BLANK == event) {
             FTS_INFO("suspend: event = %lu, not care\n", event);
         }
@@ -1744,6 +1760,7 @@ static int drm_notifier_callback(struct notifier_block *self,
     case MSM_DRM_BLANK_POWERDOWN:
         if (MSM_DRM_EARLY_EVENT_BLANK == event) {
             cancel_work_sync(&fts_data->resume_work);
+            fts_ts_suspend(ts_data->dev);
         } else if (MSM_DRM_EVENT_BLANK == event) {
             FTS_INFO("suspend: event = %lu, not care\n", event);
         }
@@ -1763,6 +1780,7 @@ static void fts_ts_early_suspend(struct early_suspend *handler)
                                   early_suspend);
 
     cancel_work_sync(&fts_data->resume_work);
+    fts_ts_suspend(ts_data->dev);
 }
 
 static void fts_ts_late_resume(struct early_suspend *handler)
@@ -1899,6 +1917,10 @@ static int fts_ts_probe_entry(struct fts_ts_data *ts_data)
         FTS_ERROR("init fw upgrade fail");
     }
 
+    if (ts_data->ts_workqueue) {
+        INIT_WORK(&ts_data->resume_work, fts_resume_work);
+    }
+
 #if defined(CONFIG_PM) && FTS_PATCH_COMERR_PM
     init_completion(&ts_data->pm_completion);
     ts_data->pm_suspend = false;
@@ -2022,6 +2044,94 @@ static int fts_ts_remove_entry(struct fts_ts_data *ts_data)
 
     FTS_FUNC_EXIT();
 
+    return 0;
+}
+
+static int fts_ts_suspend(struct device *dev)
+{
+    int ret = 0;
+    struct fts_ts_data *ts_data = fts_data;
+
+    FTS_FUNC_ENTER();
+    if (ts_data->suspended) {
+        FTS_INFO("Already in suspend state");
+        return 0;
+    }
+
+    if (ts_data->fw_loading) {
+        FTS_INFO("fw upgrade in process, can't suspend");
+        return 0;
+    }
+
+    fts_esdcheck_suspend(ts_data);
+
+	if(fb_power_off()){
+    if (ts_data->gesture_support) {
+        fts_gesture_suspend(ts_data);
+    } else {
+        fts_irq_disable();
+
+        FTS_INFO("make TP enter into sleep mode");
+        ret = fts_write_reg(FTS_REG_POWER_MODE, FTS_REG_POWER_MODE_SLEEP);
+        if (ret < 0)
+            FTS_ERROR("set TP to sleep mode fail, ret=%d", ret);
+
+        if (!ts_data->ic_info.is_incell) {
+#if FTS_POWER_SOURCE_CUST_EN
+            ret = fts_power_source_suspend(ts_data);
+            if (ret < 0) {
+                FTS_ERROR("power enter suspend fail");
+            }
+#endif
+        }
+    }
+
+    //fts_release_all_finger();
+    ts_data->suspended = true;
+	}else{
+		//enable_irq_wake(fts_data->irq);
+	}
+    FTS_FUNC_EXIT();
+    return 0;
+}
+
+static int fts_ts_resume(struct device *dev)
+{
+    struct fts_ts_data *ts_data = fts_data;
+
+    FTS_FUNC_ENTER();
+    if (!ts_data->suspended) {
+        FTS_DEBUG("Already in awake state");
+        return 0;
+    }
+	FTS_INFO("fts_ts_resume fb_power_off():%d\n",fb_power_off());
+	if(fb_power_off()){
+
+    fts_release_all_finger();
+
+    if (!ts_data->ic_info.is_incell) {
+#if FTS_POWER_SOURCE_CUST_EN
+        fts_power_source_resume(ts_data);
+#endif
+        fts_reset_proc(200);
+    }
+
+    fts_wait_tp_to_valid();
+    fts_ex_mode_recovery(ts_data);
+
+    fts_esdcheck_resume(ts_data);
+
+    if (ts_data->gesture_support) {
+        fts_gesture_resume(ts_data);
+    }
+    else {
+        fts_irq_enable();
+    }
+	}else{
+		//disable_irq_wake(ts_data->irq);
+	}
+        ts_data->suspended = false;
+    FTS_FUNC_EXIT();
     return 0;
 }
 
