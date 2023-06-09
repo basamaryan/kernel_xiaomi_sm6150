@@ -244,8 +244,6 @@ void fts_gesture_recovery(struct fts_ts_data *ts_data);
 int fts_gesture_readdata(struct fts_ts_data *ts_data, u8 *data);
 int fts_gesture_suspend(struct fts_ts_data *ts_data);
 int fts_gesture_resume(struct fts_ts_data *ts_data);
-void fts_gesture_set(struct fts_ts_data *ts_data, enum gesture_type type,
-		     bool enabled);
 
 /* Apk and functions */
 int fts_create_apk_debug_channel(struct fts_ts_data *);
@@ -277,7 +275,6 @@ void fts_prc_queue_work(struct fts_ts_data *ts_data);
 int fts_fwupg_init(struct fts_ts_data *ts_data);
 int fts_fwupg_exit(struct fts_ts_data *ts_data);
 int fts_fw_resume(bool need_reset);
-int fts_fw_recovery(void);
 int fts_upgrade_bin(char *fw_name, bool force);
 int fts_enter_test_environment(bool test_state);
 

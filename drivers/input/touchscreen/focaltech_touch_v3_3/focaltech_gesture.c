@@ -717,11 +717,11 @@ int fts_gesture_init(struct fts_ts_data *ts_data)
 	input_set_capability(input_dev, EV_KEY, KEY_GESTURE_C);
 #endif
 	input_set_capability(input_dev, EV_KEY, KEY_WAKEUP);
+#if defined ASUS_SAKE_PROJECT
 	input_set_capability(input_dev, EV_KEY, KEY_GESTURE_PAUSE);
 	input_set_capability(input_dev, EV_KEY, KEY_GESTURE_REWIND);
 	input_set_capability(input_dev, EV_KEY, KEY_GESTURE_FORWARD);
 
-#if defined ASUS_SAKE_PROJECT
 	INIT_DELAYED_WORK(&ts_data->gesture_work, fts_gesture_work);
 #endif
 

@@ -38,13 +38,9 @@
 #include <linux/of_gpio.h>
 #include <linux/of_irq.h>
 #include <linux/notifier.h>
-#if defined(CONFIG_FB)
-#include <linux/fb.h>
-#elif defined(CONFIG_DRM) && defined(CONFIG_DRM_PANEL)
+#if defined(CONFIG_DRM)
+#include <linux/msm_drm_notify.h>
 #include <drm/drm_panel.h>
-#elif defined(CONFIG_HAS_EARLYSUSPEND)
-#include <linux/earlysuspend.h>
-#define FTS_SUSPEND_LEVEL 1 /* Early-suspend level */
 #endif
 #include "focaltech_core.h"
 
@@ -774,9 +770,7 @@ static int fts_read_touchdata(struct fts_ts_data *data)
 
 	if (((0xEF == buf[2]) && (0xEF == buf[3]) && (0xEF == buf[4])) ||
 	    ((ret < 0) && (0xEF == buf[1]))) {
-		fts_release_all_finger();
-		/* check if need recovery fw */
-		fts_fw_recovery();
+		fts_release_all_finger();   
 		data->fw_is_running = true;
 		return 1;
 	} else if (ret < 0) {
@@ -1511,7 +1505,7 @@ static int fts_parse_dt(struct device *dev, struct fts_ts_platform_data *pdata)
 	return 0;
 }
 
-#if defined(CONFIG_DRM) && defined(CONFIG_DRM_PANEL)
+#if defined(CONFIG_DRM)
 static struct drm_panel *active_panel;
 
 static int fts_ts_check_dt(struct device_node *np)
@@ -1558,14 +1552,14 @@ static void fts_suspend_work(struct work_struct *work)
 static int fb_notifier_callback(struct notifier_block *self,
 				unsigned long event, void *data)
 {
-	struct drm_panel_notifier *evdata = data;
+	struct msm_drm_notifier *evdata = data;
 	int *blank = NULL;
 
 	if (!evdata)
 		return 0;
 
-	if (!(event == DRM_PANEL_EARLY_EVENT_BLANK ||
-	      event == DRM_PANEL_EVENT_BLANK)) {
+	if (!(event == MSM_DRM_EARLY_EVENT_BLANK ||
+	      event == MSM_DRM_EVENT_BLANK)) {
 		FTS_INFO("event(%lu) do not need process\n", event);
 		return 0;
 	}
@@ -1573,30 +1567,24 @@ static int fb_notifier_callback(struct notifier_block *self,
 	blank = evdata->data;
 	FTS_DEBUG("FB event:%lu,blank:%d", event, *blank);
 	switch (*blank) {
-	case DRM_PANEL_BLANK_UNBLANK:
-		if (event == DRM_PANEL_EVENT_BLANK) {
+	case MSM_DRM_BLANK_UNBLANK:
+		if (event == MSM_DRM_EVENT_BLANK) {
 			FTS_DEBUG("resume: event = %lu, not care\n", event);
-		} else if (event == DRM_PANEL_EARLY_EVENT_BLANK) {
+		} else if (event == MSM_DRM_EARLY_EVENT_BLANK) {
 			cancel_delayed_work(&fts_data->suspend_work);
 			queue_work(fts_data->ts_workqueue,
 				   &fts_data->resume_work);
 		}
 		break;
 
-	case DRM_PANEL_BLANK_POWERDOWN:
-		if (event == DRM_PANEL_EARLY_EVENT_BLANK) {
+	case MSM_DRM_BLANK_POWERDOWN:
+		if (event == MSM_DRM_EARLY_EVENT_BLANK) {
 			mod_delayed_work(fts_data->ts_workqueue,
 					 &fts_data->suspend_work,
 					 msecs_to_jiffies(1000));
-		} else if (event == DRM_PANEL_EVENT_BLANK) {
+		} else if (event == MSM_DRM_EVENT_BLANK) {
 			FTS_DEBUG("suspend: event = %lu, not care\n", event);
 		}
-		break;
-
-	case DRM_PANEL_BLANK_LP:
-		mod_delayed_work(fts_data->ts_workqueue,
-				 &fts_data->suspend_work,
-				 msecs_to_jiffies(1000));
 		break;
 	default:
 		FTS_DEBUG("FB BLANK(%d) do not need process\n", *blank);
@@ -1642,7 +1630,7 @@ static int fts_ts_probe_entry(struct fts_ts_data *ts_data)
 		if (ret)
 			FTS_ERROR("device-tree parse fail");
 
-#if defined(CONFIG_DRM) && defined(CONFIG_DRM_PANEL)
+#if defined(CONFIG_DRM)
 		ret = fts_ts_check_dt(ts_data->dev->of_node);
 		if (ret == -EPROBE_DEFER)
 			return ret;
@@ -1755,7 +1743,7 @@ static int fts_ts_probe_entry(struct fts_ts_data *ts_data)
 		FTS_ERROR("init fw upgrade fail");
 	}
 
-#if defined(CONFIG_DRM) && defined(CONFIG_DRM_PANEL)
+#if defined(CONFIG_DRM)
 	if (ts_data->ts_workqueue) {
 		INIT_WORK(&ts_data->resume_work, fts_resume_work);
 		INIT_DELAYED_WORK(&ts_data->suspend_work, fts_suspend_work);
@@ -1763,8 +1751,7 @@ static int fts_ts_probe_entry(struct fts_ts_data *ts_data)
 
 	ts_data->fb_notif.notifier_call = fb_notifier_callback;
 	if (active_panel) {
-		ret = drm_panel_notifier_register(active_panel,
-						  &ts_data->fb_notif);
+		ret = msm_drm_register_client(&ts_data->fb_notif);
 		if (ret)
 			FTS_ERROR("drm_panel_notifier_register fail: %d", ret);
 	}
@@ -1839,9 +1826,9 @@ static int fts_ts_remove_entry(struct fts_ts_data *ts_data)
 	if (ts_data->ts_workqueue)
 		destroy_workqueue(ts_data->ts_workqueue);
 
-#if defined(CONFIG_DRM) && defined(CONFIG_DRM_PANEL)
+#if defined(CONFIG_DRM)
 	if (active_panel)
-		drm_panel_notifier_unregister(active_panel, &ts_data->fb_notif);
+		msm_drm_unregister_client(&ts_data->fb_notif);
 #elif defined(CONFIG_HAS_EARLYSUSPEND)
 	unregister_early_suspend(&ts_data->early_suspend);
 #endif
@@ -2042,7 +2029,6 @@ static void __exit fts_ts_exit(void)
 module_init(fts_ts_init);
 module_exit(fts_ts_exit);
 
-MODULE_IMPORT_NS(VFS_internal_I_am_really_a_filesystem_and_am_NOT_a_driver);
 MODULE_AUTHOR("FocalTech Driver Team");
 MODULE_DESCRIPTION("FocalTech Touchscreen Driver");
 MODULE_LICENSE("GPL v2");

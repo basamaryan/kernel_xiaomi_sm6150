@@ -1,5 +1,5 @@
 /************************************************************************
-* Copyright (C) 2012-2019, Focaltech Systems (R)£¬All Rights Reserved.
+* Copyright (C) 2012-2019, Focaltech Systems (R)ï¿½ï¿½All Rights Reserved.
 *
 * File Name: focaltech_flash.h
 *
@@ -201,9 +201,7 @@ struct fts_upgrade {
 /*****************************************************************************
 * Global variable or extern global variabls/functions
 *****************************************************************************/
-extern struct upgrade_func upgrade_func_ft5452;
-extern struct upgrade_func upgrade_func_ft5652;
-extern struct upgrade_func upgrade_func_ft3658u;
+
 
 /*****************************************************************************
 * Static function prototypes

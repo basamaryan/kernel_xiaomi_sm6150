@@ -1,4 +1,3 @@
-ccflags-y += -DANDROID_GKI_VFS_EXPORT_ONLY=VFS_internal_I_am_really_a_filesystem_and_am_NOT_a_driver
 
 obj-$(CONFIG_TOUCHSCREEN_FTS_V3_3) += focaltech_fts_v3_3.o
 focaltech_fts_v3_3-y += focaltech_core.o
