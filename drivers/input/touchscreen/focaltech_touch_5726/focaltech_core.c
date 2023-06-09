@@ -74,6 +74,7 @@ struct fts_ts_data *fts_data;
 /*****************************************************************************
 * Static function prototypes
 *****************************************************************************/
+static int fts_ts_resume(struct device *dev);
 
 int fts_check_cid(struct fts_ts_data *ts_data, u8 id_h)
 {
@@ -1589,7 +1590,13 @@ static int fts_parse_dt(struct device *dev, struct fts_ts_platform_data *pdata)
     FTS_FUNC_EXIT();
     return 0;
 }
+static void fts_resume_work(struct work_struct *work)
+{
+    struct fts_ts_data *ts_data = container_of(work, struct fts_ts_data,
+                                  resume_work);
 
+    fts_ts_resume(ts_data->dev);
+}
 #if defined(CONFIG_FB)
 static int fb_notifier_callback(struct notifier_block *self,
                                 unsigned long event, void *data)
@@ -1898,6 +1905,13 @@ static int fts_ts_probe_entry(struct fts_ts_data *ts_data)
     if (ret) {
         FTS_ERROR("init fw upgrade fail");
     }
+	
+    if (ts_data->ts_workqueue) {
+	    pr_err("running resume");
+        INIT_WORK(&ts_data->resume_work, fts_resume_work);
+    } else {
+    pr_err("not running resume");
+    }
 
 #if defined(CONFIG_PM) && FTS_PATCH_COMERR_PM
     init_completion(&ts_data->pm_completion);
@@ -2024,7 +2038,45 @@ static int fts_ts_remove_entry(struct fts_ts_data *ts_data)
 
     return 0;
 }
+static int fts_ts_resume(struct device *dev)
+{
+    struct fts_ts_data *ts_data = fts_data;
 
+    FTS_FUNC_ENTER();
+    if (!ts_data->suspended) {
+        FTS_DEBUG("Already in awake state");
+        return 0;
+    }
+	FTS_INFO("fts_ts_resume fb_power_off():%d\n",fb_power_off());
+	if(fb_power_off()){
+
+    fts_release_all_finger();
+
+    if (!ts_data->ic_info.is_incell) {
+#if FTS_POWER_SOURCE_CUST_EN
+        fts_power_source_resume(ts_data);
+#endif
+        fts_reset_proc(200);
+    }
+
+    fts_wait_tp_to_valid();
+    fts_ex_mode_recovery(ts_data);
+
+    fts_esdcheck_resume(ts_data);
+
+    if (ts_data->gesture_support) {
+        fts_gesture_resume(ts_data);
+    }
+    else {
+        fts_irq_enable();
+    }
+	}else{
+		//disable_irq_wake(ts_data->irq);
+	}
+        ts_data->suspended = false;
+    FTS_FUNC_EXIT();
+    return 0;
+}
 #if defined(CONFIG_PM) && FTS_PATCH_COMERR_PM
 static int fts_pm_suspend(struct device *dev)
 {
