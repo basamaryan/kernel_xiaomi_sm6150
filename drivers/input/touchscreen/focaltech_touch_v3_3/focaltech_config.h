@@ -173,11 +173,8 @@
 /*
  * choose your ic chip type of focaltech
  */
-#if defined ASUS_SAKE_PROJECT
 #define FTS_CHIP_TYPE _FT3658U
-#else
-#define FTS_CHIP_TYPE _FT8720
-#endif
+
 
 /******************* Enables *********************/
 /*********** 1 to enable, 0 to disable ***********/
@@ -198,11 +195,8 @@
  * Report Pressure in multitouch
  * 1:enable(default),0:disable
 */
-#if defined ASUS_SAKE_PROJECT
-#define FTS_REPORT_PRESSURE_EN 0
-#else
+
 #define FTS_REPORT_PRESSURE_EN 1
-#endif
 
 /*
  * Stylus PEN enable
@@ -220,11 +214,8 @@
  * ESD check & protection
  * default: disable
  */
-#if defined ASUS_SAKE_PROJECT
-#define FTS_ESDCHECK_EN 0
-#else
+
 #define FTS_ESDCHECK_EN 1
-#endif
 
 /*
  * Pinctrl enable
@@ -237,11 +228,8 @@
  * enable it when customer need control TP power
  * default: disable
  */
-#if defined ASUS_SAKE_PROJECT
-#define FTS_POWER_SOURCE_CUST_EN 1
-#else
+
 #define FTS_POWER_SOURCE_CUST_EN 0
-#endif
 
 /****************************************************/
 
@@ -249,7 +237,7 @@
 /*
  * auto upgrade
  */
-#define FTS_AUTO_UPGRADE_EN 1
+#define FTS_AUTO_UPGRADE_EN 0
 
 /*
  * auto upgrade for lcd cfg
@@ -289,12 +277,8 @@
  * define your own fw_file, the sample one to be replaced is invalid
  * NOTE: if FTS_GET_MODULE_NUM > 1, it's the fw corresponding with FTS_VENDOR_ID
  */
-#if defined ASUS_SAKE_PROJECT
-#define FTS_UPGRADE_FW_FILE                                                    \
-	"include/firmware/FT3658G_SAKE_V85_D01_20211221_app.i"
-#else
+
 #define FTS_UPGRADE_FW_FILE "include/firmware/fw_sample.i"
-#endif
 
 /*
  * if FTS_GET_MODULE_NUM >= 2, fw corrsponding with FTS_VENDOR_ID2
