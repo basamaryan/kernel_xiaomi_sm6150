@@ -77,6 +77,7 @@ int fts_read(u8 *cmd, u32 cmdlen, u8 *data, u32 datalen)
 			.buf = ts_data->bus_rx_buf,
 		},
 	};
+	pr_err("FTS: fts_read: cmd: 0x%02x", *cmd);
 	struct i2c_msg *msg = NULL;
 	int msg_num = 0;
 	int ret = 0;
