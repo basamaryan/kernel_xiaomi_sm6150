@@ -1986,7 +1986,7 @@ int fts_fwupg_by_name(char *fw_name)
 
 #if !FTS_AUTO_UPGRADE_EN
 	FTS_INFO("FTS_AUTO_UPGRADE_EN is disabled, not upgrade when power on");
-	return ;
+	return 0;
 #endif
 
 	FTS_INFO("fw upgrade work function");
