@@ -202,8 +202,8 @@
 /*
  * choose your ic chip type of focaltech
  */
-#define FTS_CHIP_TYPE   _FT3658U
-/*#define FTS_CHIP_TYPE   _FT3519T*/
+/*#define FTS_CHIP_TYPE   _FT3658U*/
+#define FTS_CHIP_TYPE   _FT3519T
 
 
 /******************* Enables *********************/
